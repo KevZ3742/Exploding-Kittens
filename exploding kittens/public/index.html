@@ -1,0 +1,1028 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Exploding Kittens 💥</title>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0d0d0d;
+  --panel: #1a1a1a;
+  --border: #2e2e2e;
+  --yellow: #ffe600;
+  --orange: #ff6b00;
+  --red: #ff2244;
+  --green: #00e676;
+  --blue: #00b8ff;
+  --purple: #cc00ff;
+  --pink: #ff00aa;
+  --white: #f0f0f0;
+  --muted: #666;
+  --card-w: 110px;
+  --card-h: 155px;
+}
+
+body {
+  background: var(--bg); color: var(--white);
+  font-family: 'Nunito', sans-serif; min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 10% 10%, rgba(255,230,0,.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 90%, rgba(255,34,68,.07) 0%, transparent 50%);
+}
+
+/* ── SCREENS ── */
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+/* ── TITLE ── */
+#s-title { gap: 1.5rem; padding: 2rem; text-align: center; position: relative; }
+.title-logo {
+  font-family: 'Fredoka One', cursive;
+  font-size: clamp(3rem, 10vw, 6rem);
+  line-height: 1;
+  background: linear-gradient(135deg, var(--yellow), var(--orange), var(--red));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 0 40px rgba(255,107,0,.5));
+  letter-spacing: .02em;
+}
+.title-emoji { font-size: clamp(3rem, 8vw, 5rem); animation: bounce 1.5s ease-in-out infinite; display: block; }
+@keyframes bounce { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-12px) rotate(5deg)} }
+.title-sub { font-size: 1rem; color: var(--muted); letter-spacing: .15em; text-transform: uppercase; font-weight: 700; }
+
+.inp { background: var(--panel); border: 2px solid var(--border); color: var(--white);
+  padding: .75rem 1.1rem; font-family: 'Nunito', sans-serif; font-size: 1rem; font-weight: 600;
+  outline: none; border-radius: 6px; width: 100%; transition: border-color .2s; }
+.inp:focus { border-color: var(--yellow); }
+.inp::placeholder { color: var(--muted); }
+.inp-code { text-transform: uppercase; text-align: center; letter-spacing: .3em; font-size: 1.3rem; }
+
+/* ── BUTTONS ── */
+.btn {
+  font-family: 'Fredoka One', cursive; font-size: 1rem; letter-spacing: .05em;
+  padding: .7rem 1.8rem; border: none; border-radius: 6px;
+  cursor: pointer; transition: all .15s; position: relative; overflow: hidden;
+  text-transform: uppercase;
+}
+.btn-yellow { background: var(--yellow); color: #000; }
+.btn-yellow:hover { background: #ffd000; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,230,0,.4); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-red:hover { background: #ff4060; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,34,68,.4); }
+.btn-orange { background: var(--orange); color: #fff; }
+.btn-orange:hover { background: #ff8c2a; transform: translateY(-2px); box-shadow: 0 6px 20px rgba(255,107,0,.4); }
+.btn-ghost { background: transparent; color: var(--muted); border: 2px solid var(--border); }
+.btn-ghost:hover { border-color: var(--yellow); color: var(--yellow); transform: translateY(-2px); }
+.btn-green { background: var(--green); color: #000; }
+.btn-green:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,230,118,.4); }
+.btn-purple { background: var(--purple); color: #fff; }
+.btn-purple:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(204,0,255,.4); }
+.btn:disabled { opacity: .35; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+.btn-sm { font-size: .8rem; padding: .45rem 1.1rem; }
+.btn-row { display: flex; gap: .75rem; flex-wrap: wrap; justify-content: center; }
+
+/* ── LOBBY ── */
+#s-lobby { gap: 1.5rem; padding: 2rem; text-align: center; }
+.lobby-code {
+  font-family: 'Fredoka One', cursive; font-size: 3.5rem; color: var(--yellow);
+  letter-spacing: .4em; filter: drop-shadow(0 0 20px rgba(255,230,0,.5));
+}
+.player-list { display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+.player-chip {
+  background: var(--panel); border: 2px solid var(--border); border-radius: 30px;
+  padding: .35rem 1rem; font-weight: 700; font-size: .9rem; color: var(--white);
+}
+.player-chip.me { border-color: var(--yellow); color: var(--yellow); }
+
+/* ── GAME SCREEN ── */
+#s-game { justify-content: flex-start; padding: 0; height: 100vh; overflow: hidden; }
+
+.game-header {
+  width: 100%; padding: .55rem 1rem;
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: .5rem;
+  background: var(--panel); border-bottom: 2px solid var(--border); flex-shrink: 0;
+}
+.header-left { display: flex; align-items: center; gap: .75rem; }
+.header-center { text-align: center; }
+.header-right { display: flex; align-items: center; justify-content: flex-end; gap: .75rem; }
+.game-title { font-family: 'Fredoka One', cursive; font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--yellow), var(--orange));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.turn-badge {
+  font-family: 'Fredoka One', cursive; font-size: .95rem;
+  padding: .3rem .9rem; border-radius: 20px;
+  background: rgba(255,230,0,.12); border: 1.5px solid rgba(255,230,0,.3); color: var(--yellow);
+}
+.deck-badge {
+  font-size: .8rem; font-weight: 700; color: var(--muted);
+  padding: .25rem .7rem; background: var(--bg); border-radius: 20px;
+}
+.leave-btn { font-size: .7rem; padding: .3rem .7rem; }
+
+.game-body {
+  flex: 1; display: flex; flex-direction: column;
+  padding: .6rem .75rem; gap: .6rem;
+  max-width: 1100px; width: 100%; margin: 0 auto;
+  height: 0; min-height: 0; overflow: hidden;
+}
+
+/* Opponents */
+.opponents-area { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; align-items: flex-end; flex-shrink: 0; }
+.opponent-zone { display: flex; flex-direction: column; align-items: center; gap: .3rem; }
+.opp-name {
+  font-weight: 800; font-size: .75rem; padding: .25rem .8rem; border-radius: 20px;
+  border: 2px solid var(--border); color: var(--white); white-space: nowrap;
+  transition: all .3s;
+}
+.opp-name.active { border-color: var(--yellow); color: var(--yellow); box-shadow: 0 0 14px rgba(255,230,0,.4); animation: glow 1.5s ease-in-out infinite; }
+.opp-name.dead { opacity: .25; text-decoration: line-through; }
+@keyframes glow { 0%,100%{box-shadow:0 0 8px rgba(255,230,0,.3)} 50%{box-shadow:0 0 22px rgba(255,230,0,.7)} }
+.opp-cards { display: flex; gap: 3px; }
+.mini-card {
+  width: 28px; height: 40px; border-radius: 4px; border: 1.5px solid var(--border);
+  background: linear-gradient(135deg, #1e1e1e, #2a2a2a);
+  display: flex; align-items: center; justify-content: center; font-size: .7rem; color: var(--border);
+}
+
+/* Middle zone */
+.middle-zone {
+  display: flex; align-items: stretch; gap: 1rem; flex-shrink: 0; flex-wrap: wrap; justify-content: center;
+}
+.deck-zone {
+  display: flex; flex-direction: column; align-items: center; gap: .4rem;
+  background: var(--panel); border: 2px solid var(--border); border-radius: 10px;
+  padding: .75rem 1rem; cursor: pointer; transition: all .2s; min-width: 100px;
+}
+.deck-zone:hover { border-color: var(--yellow); }
+.deck-zone.draw-prompt { border-color: var(--green); box-shadow: 0 0 20px rgba(0,230,118,.3); animation: drawPulse 1s ease-in-out infinite; }
+@keyframes drawPulse { 0%,100%{box-shadow:0 0 10px rgba(0,230,118,.2)} 50%{box-shadow:0 0 30px rgba(0,230,118,.6)} }
+.zone-label { font-size: .65rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 700; color: var(--muted); }
+.deck-count { font-family: 'Fredoka One', cursive; font-size: 2rem; color: var(--yellow); line-height: 1; }
+.deck-emoji { font-size: 2.2rem; }
+
+.discard-zone {
+  display: flex; flex-direction: column; align-items: center; gap: .4rem;
+  background: var(--panel); border: 2px solid var(--border); border-radius: 10px;
+  padding: .75rem 1rem; min-width: 120px; align-self: stretch; justify-content: center;
+}
+
+.game-log {
+  flex: 1; min-width: 220px; max-width: 380px;
+  background: var(--panel); border: 2px solid var(--border); border-radius: 10px;
+  padding: .6rem .85rem; font-size: .88rem; line-height: 1.65; color: #aaa;
+  overflow-y: auto; height: 160px;
+  scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+}
+.log-entry { border-bottom: 1px solid rgba(255,255,255,.04); padding: .15rem 0; }
+.log-entry:last-child { color: var(--white); border: none; }
+
+/* Player hand */
+.player-area { display: flex; flex-direction: column; align-items: center; gap: .5rem; flex-shrink: 0; }
+.status-bar {
+  font-family: 'Fredoka One', cursive; font-size: 1rem; color: var(--yellow);
+  text-align: center; min-height: 1.4em; letter-spacing: .03em;
+}
+.hand-row { display: flex; gap: .6rem; justify-content: center; flex-wrap: wrap; padding-bottom: .5rem; }
+
+/* ── CARDS ── */
+.card {
+  width: var(--card-w); height: var(--card-h);
+  border-radius: 10px; border: 2.5px solid var(--border);
+  cursor: pointer; position: relative; transition: transform .18s, box-shadow .18s;
+  user-select: none; overflow: hidden; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  padding: 8px 6px;
+}
+.card:hover:not(.no-click):not(.card-disabled) { transform: translateY(-12px); box-shadow: 0 14px 30px rgba(0,0,0,.7); }
+.card.selected { transform: translateY(-18px) scale(1.04); }
+.card.card-disabled { opacity: .4; cursor: not-allowed; }
+.card.back {
+  background: repeating-linear-gradient(45deg, #1a1a1a 0, #1a1a1a 6px, #222 6px, #222 12px);
+  border-color: #333;
+}
+.card.back::after { content: '🐱'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 2rem; opacity: .25; }
+.card-emoji { font-size: 2.4rem; line-height: 1; }
+.card-name { font-family: 'Fredoka One', cursive; font-size: .72rem; text-align: center; line-height: 1.2; }
+.card-desc { font-size: .52rem; text-align: center; color: #aaa; line-height: 1.35; padding: 0 2px; }
+
+/* Card themes */
+.card-exploding { background: linear-gradient(160deg, #2a0000, #1a0000); border-color: var(--red); box-shadow: inset 0 0 30px rgba(255,34,68,.15); }
+.card-exploding .card-name { color: var(--red); }
+.card-defuse { background: linear-gradient(160deg, #002a10, #001a0a); border-color: var(--green); box-shadow: inset 0 0 30px rgba(0,230,118,.1); }
+.card-defuse .card-name { color: var(--green); }
+.card-nope { background: linear-gradient(160deg, #1a001a, #0d000d); border-color: var(--purple); box-shadow: inset 0 0 30px rgba(204,0,255,.1); }
+.card-nope .card-name { color: var(--purple); }
+.card-attack { background: linear-gradient(160deg, #2a1000, #1a0800); border-color: var(--orange); box-shadow: inset 0 0 30px rgba(255,107,0,.1); }
+.card-attack .card-name { color: var(--orange); }
+.card-skip { background: linear-gradient(160deg, #00101a, #00080d); border-color: var(--blue); box-shadow: inset 0 0 30px rgba(0,184,255,.1); }
+.card-skip .card-name { color: var(--blue); }
+.card-favor { background: linear-gradient(160deg, #1a001a, #0d000d); border-color: var(--pink); box-shadow: inset 0 0 30px rgba(255,0,170,.1); }
+.card-favor .card-name { color: var(--pink); }
+.card-shuffle { background: linear-gradient(160deg, #001a1a, #000d0d); border-color: #00fff2; box-shadow: inset 0 0 30px rgba(0,255,242,.08); }
+.card-shuffle .card-name { color: #00fff2; }
+.card-future { background: linear-gradient(160deg, #1a1a00, #0d0d00); border-color: var(--yellow); box-shadow: inset 0 0 30px rgba(255,230,0,.08); }
+.card-future .card-name { color: var(--yellow); }
+.card-tacocat { background: linear-gradient(160deg, #1a0a00, #0d0500); border-color: #ff9500; }
+.card-tacocat .card-name { color: #ff9500; }
+.card-potato { background: linear-gradient(160deg, #0a1a00, #050d00); border-color: #7ec800; }
+.card-potato .card-name { color: #7ec800; }
+.card-beard { background: linear-gradient(160deg, #00001a, #00000d); border-color: #5588ff; }
+.card-beard .card-name { color: #5588ff; }
+.card-rainbow { background: linear-gradient(160deg, #1a0010, #0d0008); border-color: #ff55cc; }
+.card-rainbow .card-name { color: #ff55cc; }
+.card-melon { background: linear-gradient(160deg, #001a08, #000d04); border-color: #00dd66; }
+.card-melon .card-name { color: #00dd66; }
+
+/* ── ACTION PANEL (fixed bottom) ── */
+#action-panel {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: rgba(13,13,13,.97); border-top: 2px solid var(--border);
+  padding: .65rem 1.25rem .85rem;
+  display: none; flex-direction: column; align-items: center; gap: .5rem;
+  z-index: 50; box-shadow: 0 -10px 40px rgba(0,0,0,.7);
+}
+#action-panel.show { display: flex; }
+.ap-label { font-size: .7rem; text-transform: uppercase; letter-spacing: .15em; font-weight: 700; color: var(--muted); }
+.ap-row { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; }
+.target-btn {
+  font-family: 'Nunito', sans-serif; font-weight: 800; font-size: .8rem;
+  padding: .4rem 1rem; border-radius: 6px; border: 2px solid var(--border);
+  background: var(--panel); color: var(--white); cursor: pointer; transition: all .2s;
+}
+.target-btn:hover, .target-btn.sel { border-color: var(--yellow); color: var(--yellow); }
+
+/* ── NOPE OVERLAY ── */
+#nope-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: none; align-items: flex-end; justify-content: center;
+  padding-bottom: 120px; pointer-events: none;
+}
+#nope-overlay.show { display: flex; }
+.nope-banner {
+  background: var(--panel); border: 2px solid var(--border); border-radius: 14px;
+  padding: .85rem 1.4rem; pointer-events: all;
+  display: flex; flex-direction: column; align-items: center; gap: .6rem;
+  max-width: 480px; width: 90%;
+  animation: slideUp .3s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 -4px 40px rgba(0,0,0,.8);
+}
+@keyframes slideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+.nope-action { font-weight: 700; font-size: .95rem; color: var(--white); text-align: center; }
+.nope-timer-bar { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.nope-timer-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--orange), var(--yellow)); border-radius: 3px; transition: width .1s linear; }
+.nope-count { font-size: .75rem; color: var(--muted); font-weight: 700; }
+
+/* ── OVERLAYS ── */
+.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.9); display: none;
+  align-items: center; justify-content: center; z-index: 300; backdrop-filter: blur(6px); }
+.overlay.show { display: flex; }
+.ov-box {
+  background: var(--panel); border: 2px solid var(--border); border-radius: 14px;
+  padding: 2rem 2.5rem; max-width: 480px; width: 90%; text-align: center;
+  animation: popIn .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn { from{opacity:0;transform:scale(.8)} to{opacity:1;transform:scale(1)} }
+.ov-title { font-family: 'Fredoka One', cursive; font-size: 2rem; margin-bottom: .5rem; }
+.ov-sub { font-size: .95rem; color: #aaa; margin-bottom: 1.5rem; line-height: 1.6; }
+.ov-emoji { font-size: 4rem; display: block; margin-bottom: .5rem; }
+
+/* Explosion screen shake */
+@keyframes shake {
+  0%,100%{transform:translate(0,0) rotate(0)}
+  10%{transform:translate(-8px,4px) rotate(-1deg)}
+  20%{transform:translate(8px,-4px) rotate(1deg)}
+  30%{transform:translate(-6px,6px) rotate(-.5deg)}
+  40%{transform:translate(6px,-6px) rotate(.5deg)}
+  50%{transform:translate(-4px,4px) rotate(-1deg)}
+  60%{transform:translate(4px,-4px) rotate(1deg)}
+  70%{transform:translate(-2px,2px) rotate(0)}
+  80%{transform:translate(2px,-2px) rotate(0)}
+}
+body.explode { animation: shake .6s ease; }
+
+/* See the Future overlay */
+#future-overlay .ov-box { max-width: 560px; }
+.future-cards { display: flex; gap: .75rem; justify-content: center; flex-wrap: wrap; margin: 1rem 0; }
+
+/* Insert kitten overlay */
+#insert-overlay .ov-box { max-width: 420px; }
+.insert-slider { width: 100%; accent-color: var(--green); margin: 1rem 0; cursor: pointer; }
+.insert-pos-label { font-family: 'Fredoka One', cursive; font-size: 1.4rem; color: var(--green); }
+
+/* Give card overlay */
+#give-card-overlay .hand-pick { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
+
+/* Toast */
+.toast {
+  position: fixed; top: 1rem; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 2px solid var(--yellow);
+  border-radius: 8px; padding: .6rem 1.4rem; font-size: .9rem; font-weight: 700;
+  color: var(--white); z-index: 999; opacity: 0; transition: opacity .25s;
+  pointer-events: none; white-space: nowrap; max-width: 90vw;
+}
+.toast.show { opacity: 1; }
+
+/* Conn */
+.conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #555; display: inline-block; margin-right: 4px; }
+.conn-dot.ok { background: var(--green); }
+.conn-dot.err { background: var(--red); }
+
+#s-waiting { gap: 1.5rem; text-align: center; padding: 2rem; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--yellow); border-radius: 50%; animation: spin 1s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+
+<!-- TITLE -->
+<div id="s-title" class="screen active">
+  <span class="title-emoji">💥</span>
+  <div class="title-logo">Exploding<br>Kittens</div>
+  <div class="title-sub">2–5 players • Multiplayer</div>
+
+  <div style="display:flex;flex-direction:column;gap:.75rem;width:100%;max-width:320px;margin-top:.5rem">
+    <input type="text" class="inp" id="inp-name" placeholder="Your name" maxlength="16">
+    <div class="btn-row">
+      <button class="btn btn-yellow" onclick="createRoom()">Create Room</button>
+      <button class="btn btn-ghost" onclick="showJoin()">Join Room</button>
+    </div>
+    <div id="join-row" style="display:none;flex-direction:column;gap:.5rem">
+      <input type="text" class="inp inp-code" id="inp-code" placeholder="CODE" maxlength="4">
+      <button class="btn btn-orange btn-sm" onclick="joinRoom()">Enter</button>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="showRules()">How to Play</button>
+  </div>
+
+  <div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">
+    <span class="conn-dot" id="conn-dot"></span><span id="conn-label">connecting…</span>
+  </div>
+</div>
+
+<!-- LOBBY -->
+<div id="s-lobby" class="screen">
+  <div style="font-family:'Fredoka One',cursive;font-size:1rem;color:var(--muted);letter-spacing:.2em;text-transform:uppercase">Room Code</div>
+  <div class="lobby-code" id="lobby-code">—</div>
+  <div style="font-size:.85rem;color:var(--muted);margin-top:-.5rem">Share this code · 2–5 players</div>
+  <div class="player-list" id="lobby-players" style="margin-top:.5rem"></div>
+  <div id="lobby-action" style="margin-top:.5rem"></div>
+  <div style="font-size:.82rem;color:var(--muted);font-style:italic" id="lobby-hint"></div>
+</div>
+
+<!-- WAITING -->
+<div id="s-waiting" class="screen">
+  <div class="spinner"></div>
+  <div style="font-size:1.1rem;color:var(--muted);font-style:italic" id="wait-msg">Waiting…</div>
+</div>
+
+<!-- GAME -->
+<div id="s-game" class="screen">
+  <div class="game-header">
+    <div class="header-left">
+      <div class="game-title">💥 EK</div>
+      <div class="deck-badge" id="g-deck-count">— cards</div>
+    </div>
+    <div class="header-center">
+      <div class="turn-badge" id="g-turn">—</div>
+    </div>
+    <div class="header-right">
+      <button class="btn btn-ghost btn-sm leave-btn" onclick="confirmLeave()">Leave</button>
+    </div>
+  </div>
+
+  <div class="game-body">
+    <div class="opponents-area" id="g-opponents"></div>
+
+    <div class="middle-zone">
+      <div class="deck-zone" id="deck-zone" onclick="drawCard()">
+        <div class="zone-label">Draw Pile</div>
+        <div class="deck-emoji">🂠</div>
+        <div class="deck-count" id="g-deck-num">—</div>
+        <div style="font-size:.65rem;color:var(--muted);margin-top:.1rem">click to draw</div>
+      </div>
+
+      <div class="game-log" id="g-log"></div>
+
+      <div class="discard-zone">
+        <div class="zone-label">Last Played</div>
+        <div id="g-discard-display" style="min-height:var(--card-h)"></div>
+      </div>
+    </div>
+
+    <div class="player-area">
+      <div class="status-bar" id="g-status">—</div>
+      <div class="hand-row" id="g-hand"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ACTION PANEL -->
+<div id="action-panel">
+  <div class="ap-label" id="ap-label">Choose a target</div>
+  <div class="ap-row" id="ap-targets"></div>
+  <div class="ap-row" id="ap-actions"></div>
+</div>
+
+<!-- NOPE OVERLAY (non-blocking bottom banner) -->
+<div id="nope-overlay">
+  <div class="nope-banner">
+    <div class="nope-action" id="nope-action-text">Someone played something!</div>
+    <div class="nope-timer-bar"><div class="nope-timer-fill" id="nope-timer-fill" style="width:100%"></div></div>
+    <div class="nope-count" id="nope-count"></div>
+    <div class="btn-row">
+      <button class="btn btn-purple" id="nope-btn" onclick="playNope()">🙅 NOPE IT!</button>
+      <button class="btn btn-ghost btn-sm" onclick="passNope()">Pass</button>
+    </div>
+  </div>
+</div>
+
+<!-- SEE THE FUTURE -->
+<div class="overlay" id="future-overlay">
+  <div class="ov-box">
+    <span class="ov-emoji">🔮</span>
+    <div class="ov-title" style="color:var(--yellow)">See the Future</div>
+    <div class="ov-sub">Top 3 cards of the deck (top first):</div>
+    <div class="future-cards" id="future-cards"></div>
+    <button class="btn btn-yellow" onclick="document.getElementById('future-overlay').classList.remove('show')">Got it!</button>
+  </div>
+</div>
+
+<!-- INSERT KITTEN -->
+<div class="overlay" id="insert-overlay">
+  <div class="ov-box">
+    <span class="ov-emoji">🐱</span>
+    <div class="ov-title" style="color:var(--green)">Defused!</div>
+    <div class="ov-sub">You defused the Exploding Kitten. Choose where to put it back in the deck.</div>
+    <div class="insert-pos-label" id="insert-pos-label">Position: Top</div>
+    <input type="range" class="insert-slider" id="insert-slider" min="0" max="10" value="0"
+      oninput="updateInsertPos()">
+    <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);width:100%;margin-top:-.5rem">
+      <span>Top (danger!)</span><span>Bottom (safe)</span>
+    </div>
+    <button class="btn btn-green" style="margin-top:1rem" onclick="confirmInsert()">Insert Kitten 💣</button>
+  </div>
+</div>
+
+<!-- GIVE CARD (Favor response) -->
+<div class="overlay" id="give-card-overlay">
+  <div class="ov-box">
+    <span class="ov-emoji">🤝</span>
+    <div class="ov-title" style="color:var(--pink)">Favor!</div>
+    <div class="ov-sub" id="give-card-sub">Someone demands a card!</div>
+    <div class="hand-pick" id="give-card-hand"></div>
+  </div>
+</div>
+
+<!-- GAME OVER -->
+<div class="overlay" id="gameover-overlay">
+  <div class="ov-box">
+    <span class="ov-emoji" id="go-emoji">🎉</span>
+    <div class="ov-title" id="go-title" style="color:var(--yellow)">Winner!</div>
+    <div class="ov-sub" id="go-sub"></div>
+    <div class="btn-row">
+      <button class="btn btn-yellow" onclick="location.reload()">Play Again</button>
+    </div>
+  </div>
+</div>
+
+<!-- RULES -->
+<div class="overlay" id="rules-overlay">
+  <div class="ov-box" style="max-width:560px;text-align:left;max-height:85vh;overflow-y:auto">
+    <div style="font-family:'Fredoka One',cursive;font-size:1.8rem;color:var(--yellow);text-align:center;margin-bottom:1rem">How to Play 💥</div>
+    <div id="rules-body" style="font-size:.9rem;line-height:1.8;color:#ccc"></div>
+    <div style="text-align:center;margin-top:1.5rem">
+      <button class="btn btn-yellow" onclick="document.getElementById('rules-overlay').classList.remove('show')">Let's Play!</button>
+    </div>
+  </div>
+</div>
+
+<!-- LEAVE CONFIRM -->
+<div class="overlay" id="leave-overlay">
+  <div class="ov-box" style="max-width:340px">
+    <span class="ov-emoji">🏃</span>
+    <div class="ov-title" style="color:var(--red)">Leave Game?</div>
+    <div class="ov-sub">You'll be removed and your friends will be notified.</div>
+    <div class="btn-row">
+      <button class="btn btn-red" onclick="doLeave()">Leave</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('leave-overlay').classList.remove('show')">Stay</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CARD_INFO = {
+  exploding: { name:'Exploding Kitten', emoji:'💥', desc:'You explode unless you have a Defuse!', cls:'card-exploding' },
+  defuse:    { name:'Defuse',           emoji:'🛡️', desc:'Stops an Exploding Kitten. Put the kitten back anywhere.', cls:'card-defuse' },
+  nope:      { name:'Nope',             emoji:'🙅', desc:'Cancels any action. Can itself be Noped.', cls:'card-nope' },
+  attack:    { name:'Attack',           emoji:'⚡', desc:'End your turn without drawing. Pass your remaining turns +1 to next player.', cls:'card-attack' },
+  skip:      { name:'Skip',             emoji:'⏭️', desc:'End one turn unit without drawing. Cancels one attack.', cls:'card-skip' },
+  favor:     { name:'Favor',            emoji:'🤝', desc:'Force a player to give you a card of their choice.', cls:'card-favor' },
+  shuffle:   { name:'Shuffle',          emoji:'🔀', desc:'Shuffle the draw pile. Does not end your turn.', cls:'card-shuffle' },
+  future:    { name:'See the Future',   emoji:'🔮', desc:'Peek at the top 3 cards of the draw pile. Does not end your turn.', cls:'card-future' },
+  tacocat:   { name:'Taco Cat',         emoji:'🌮', desc:'Cat card. Play 2 matching cats to steal a random card.', cls:'card-tacocat' },
+  potato:    { name:'Hairy Potato Cat', emoji:'🥔', desc:'Cat card. Play 2 matching cats to steal a random card.', cls:'card-potato' },
+  beard:     { name:'Beard Cat',        emoji:'🧔', desc:'Cat card. Play 2 matching cats to steal a random card.', cls:'card-beard' },
+  rainbow:   { name:'Rainbow Cat',      emoji:'🌈', desc:'Cat card. Play 2 matching cats to steal a random card.', cls:'card-rainbow' },
+  melon:     { name:'Cattermelon',      emoji:'🍉', desc:'Cat card. Play 2 matching cats to steal a random card.', cls:'card-melon' },
+};
+const CAT_CARDS = ['tacocat','potato','beard','rainbow','melon'];
+
+// ── STATE ──
+// No myTurn flag — everything derived from gameState
+let ws = null;
+let myIndex = -1;
+let isHost = false;
+let gameState = null;
+let selectedCard = null;
+let selectedCardIndex = -1;
+let selectedTarget = null;
+let nopeEnd = null;
+let nopeAnimFrame = null;
+const NOPE_WINDOW_MS = 5000;
+
+// ── HELPERS ──
+function isMyTurn() {
+  return gameState && gameState.currentPlayer === myIndex && gameState.phase === 'play';
+}
+
+// ── CONNECT ──
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  ws = new WebSocket(`${proto}://${location.host}`);
+  ws.onopen = () => setConn(true);
+  ws.onclose = () => { setConn(false); setTimeout(connect, 2000); };
+  ws.onerror = () => setConn(false);
+  ws.onmessage = e => handleMsg(JSON.parse(e.data));
+}
+function setConn(ok) {
+  const d = document.getElementById('conn-dot'), l = document.getElementById('conn-label');
+  if (d) d.className = 'conn-dot ' + (ok ? 'ok' : 'err');
+  if (l) l.textContent = ok ? 'connected' : 'reconnecting…';
+}
+function send(obj) { if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
+
+// ── MESSAGES ──
+function handleMsg(msg) {
+  switch(msg.type) {
+    case 'room_created':
+      myIndex = 0; isHost = true;
+      showScreen('s-lobby');
+      updateLobby([getName()], msg.code, true);
+      break;
+    case 'room_joined':
+      myIndex = msg.playerIndex; isHost = false;
+      showScreen('s-lobby');
+      break;
+    case 'lobby':
+      updateLobby(msg.players, msg.code, isHost);
+      break;
+    case 'game_starting':
+      showScreen('s-game');
+      toast(`💥 Game starting with ${msg.players.join(', ')}!`);
+      break;
+    case 'game_state':
+      gameState = msg;
+      myIndex = msg.myIndex;
+      // Close nope overlay if no longer in nope_window
+      if (msg.phase !== 'nope_window') {
+        document.getElementById('nope-overlay').classList.remove('show');
+      }
+      renderGame();
+      break;
+    case 'your_turn':
+      // Just a hint — actual state comes from game_state
+      renderGame();
+      break;
+    case 'turn_change':
+      // Clear selected card when turn changes
+      if (msg.playerIndex !== myIndex) {
+        selectedCard = null; selectedCardIndex = -1; selectedTarget = null;
+        hideActionPanel();
+      }
+      renderGame();
+      break;
+    case 'nope_window_open':
+      openNopeWindow(msg);
+      break;
+    case 'nope_played':
+      updateNopeBanner(msg);
+      break;
+    case 'see_future':
+      showFuture(msg.cards);
+      break;
+    case 'explosion':
+      triggerExplosion(msg.player);
+      break;
+    case 'insert_kitten':
+      showInsertOverlay(msg.deckSize);
+      break;
+    case 'give_card':
+      showGiveCardOverlay(msg.from, msg.fromIndex);
+      break;
+    case 'received_card':
+      toast(`✅ You received ${CARD_INFO[msg.card]?.emoji} ${CARD_INFO[msg.card]?.name} from ${msg.from}!`);
+      break;
+    case 'stole_card':
+      toast(`🐱 You stole ${CARD_INFO[msg.card]?.emoji} ${CARD_INFO[msg.card]?.name} from ${msg.from}!`);
+      break;
+    case 'game_over':
+      showGameOver(msg.winner);
+      break;
+    case 'error':
+      toast('⚠️ ' + msg.msg);
+      break;
+    case 'player_left':
+      toast(`👋 ${msg.name} left.`);
+      break;
+  }
+}
+
+// ── LOBBY ──
+function updateLobby(players, code, amHost) {
+  document.getElementById('lobby-code').textContent = code;
+  document.getElementById('lobby-players').innerHTML =
+    players.map((n,i) => `<div class="player-chip${i===myIndex?' me':''}">${i===0?'👑 ':''}${n}</div>`).join('');
+  const action = document.getElementById('lobby-action');
+  const hint = document.getElementById('lobby-hint');
+  if (amHost) {
+    action.innerHTML = `<button class="btn btn-yellow" onclick="startGame()" ${players.length<2?'disabled':''}>Start Game! 💥</button>`;
+    hint.textContent = players.length < 2 ? 'Waiting for more players…' : `${players.length}/5 players — ready!`;
+  } else {
+    action.innerHTML = '';
+    hint.textContent = 'Waiting for the host to start…';
+  }
+}
+function createRoom() {
+  const name = getName(); if (!name) return;
+  send({ type: 'create_room', name });
+}
+function showJoin() { document.getElementById('join-row').style.display = 'flex'; }
+function joinRoom() {
+  const name = getName(); if (!name) return;
+  const code = document.getElementById('inp-code').value.trim().toUpperCase();
+  if (!code) { toast('Enter a room code'); return; }
+  send({ type: 'join_room', name, code });
+}
+function startGame() { send({ type: 'start_game' }); }
+function getName() {
+  const n = document.getElementById('inp-name')?.value.trim();
+  if (!n) { toast('Enter your name first!'); return null; }
+  return n;
+}
+
+// ── RENDER GAME ──
+function renderGame() {
+  if (!gameState) return;
+  const g = gameState;
+  const myTurn = isMyTurn();
+  const me = g.players[myIndex];
+  const curPlayer = g.players[g.currentPlayer];
+
+  // Header
+  const turnLabel = document.getElementById('g-turn');
+  if (myTurn) {
+    turnLabel.textContent = g.turnsLeft > 1 ? `Your Turn ×${g.turnsLeft}` : 'Your Turn';
+    turnLabel.style.borderColor = 'var(--green)';
+    turnLabel.style.color = 'var(--green)';
+  } else {
+    turnLabel.textContent = `${curPlayer?.name}'s Turn${g.turnsLeft > 1 ? ` ×${g.turnsLeft}` : ''}`;
+    turnLabel.style.borderColor = '';
+    turnLabel.style.color = '';
+  }
+  document.getElementById('g-deck-count').textContent = `${g.deckCount} cards`;
+  document.getElementById('g-deck-num').textContent = g.deckCount;
+
+  // Discard
+  const disc = document.getElementById('g-discard-display');
+  disc.innerHTML = g.discardTop
+    ? cardHTML(g.discardTop, false, false, 'no-click')
+    : '<div style="opacity:.2;font-size:.8rem;text-align:center;padding:1rem">empty</div>';
+
+  // Opponents
+  const oppEl = document.getElementById('g-opponents');
+  oppEl.innerHTML = '';
+  g.players.forEach((p, i) => {
+    if (i === myIndex) return;
+    const z = document.createElement('div');
+    z.className = 'opponent-zone';
+    z.innerHTML = `
+      <div class="opp-name${i===g.currentPlayer?' active':''}${!p.alive?' dead':''}">${p.alive?'':'💀 '}${p.name}</div>
+      <div class="opp-cards">${Array(Math.max(0,p.cardCount)).fill(0).map(()=>'<div class="mini-card">🂠</div>').join('')}</div>
+    `;
+    oppEl.appendChild(z);
+  });
+
+  // Status
+  const status = document.getElementById('g-status');
+  if (!me?.alive) {
+    status.textContent = '💀 You exploded! Watching the chaos…';
+  } else if (myTurn) {
+    status.textContent = '✨ Your turn — play cards or click the deck to draw & end turn';
+  } else if (g.phase === 'favor_response' && g.pendingAction) {
+    const pd = g.pendingAction;
+    status.textContent = `🤝 ${pd.playerName} played Favor — waiting for response…`;
+  } else {
+    status.textContent = `Waiting for ${curPlayer?.name}…`;
+  }
+
+  // Hand
+  const handEl = document.getElementById('g-hand');
+  handEl.innerHTML = '';
+  if (me?.hand) {
+    me.hand.forEach((card, i) => {
+      const canPlay = myTurn && card !== 'defuse' && card !== 'exploding';
+      const isSelected = selectedCard === card && selectedCardIndex === i;
+      const wrap = document.createElement('div');
+      wrap.innerHTML = cardHTML(card, isSelected, !canPlay && !!me.hand);
+      wrap.firstChild.addEventListener('click', () => {
+        if (!canPlay) { toast("Can't play that card!"); return; }
+        handleCardClick(card, i);
+      });
+      handEl.appendChild(wrap);
+    });
+  }
+
+  // Log
+  const logEl = document.getElementById('g-log');
+  logEl.innerHTML = (g.log||[]).map(l=>`<div class="log-entry">${l}</div>`).join('');
+  logEl.scrollTop = logEl.scrollHeight;
+
+  // Deck clickability — always clickable when it's your turn and phase is play
+  const deckZone = document.getElementById('deck-zone');
+  deckZone.classList.toggle('draw-prompt', myTurn);
+  deckZone.style.pointerEvents = myTurn ? 'all' : 'none';
+  deckZone.style.opacity = myTurn ? '1' : '0.5';
+}
+
+// ── CARD CLICK ──
+function handleCardClick(card, cardIdx) {
+  // Toggle deselect
+  if (selectedCard === card && selectedCardIndex === cardIdx) {
+    selectedCard = null; selectedCardIndex = -1; selectedTarget = null;
+    hideActionPanel(); renderGame(); return;
+  }
+
+  selectedCard = card; selectedCardIndex = cardIdx; selectedTarget = null;
+
+  if (CAT_CARDS.includes(card)) {
+    const hand = gameState.players[myIndex].hand;
+    const copies = hand.filter(c => c === card).length;
+    if (copies >= 2) {
+      showComboPanel(card);
+    } else {
+      // Single cat — play immediately for discard, no effect
+      send({ type: 'play_card', card, isCombo: false });
+      selectedCard = null; selectedCardIndex = -1;
+      hideActionPanel();
+    }
+    return;
+  }
+
+  if (card === 'favor') {
+    showTargetPanel(card);
+  } else {
+    showConfirmPanel(card);
+  }
+  renderGame();
+}
+
+function sendPlay(card, isCombo, target) {
+  send({ type: 'play_card', card, isCombo: !!isCombo, target: target ?? null });
+  selectedCard = null; selectedCardIndex = -1; selectedTarget = null;
+  hideActionPanel();
+}
+
+// ── ACTION PANEL ──
+function showConfirmPanel(card) {
+  const panel = document.getElementById('action-panel');
+  document.getElementById('ap-label').textContent = `${CARD_INFO[card]?.emoji} Play ${CARD_INFO[card]?.name}?`;
+  document.getElementById('ap-targets').innerHTML = '';
+  document.getElementById('ap-actions').innerHTML = `
+    <button class="btn btn-yellow" onclick="sendPlay('${card}')">Play it ✓</button>
+    <button class="btn btn-ghost btn-sm" onclick="cancelPlay()">Cancel</button>
+  `;
+  panel.classList.add('show');
+}
+
+function showTargetPanel(card) {
+  const panel = document.getElementById('action-panel');
+  document.getElementById('ap-label').textContent = `${CARD_INFO[card]?.emoji} Choose a target:`;
+
+  const opponents = gameState.players.map((p,i)=>({p,i})).filter(({p,i})=>i!==myIndex&&p.alive);
+  document.getElementById('ap-targets').innerHTML = opponents.map(({p,i})=>
+    `<button class="target-btn${selectedTarget===i?' sel':''}" onclick="selectTarget(${i},'${card}')">${p.name}</button>`
+  ).join('');
+
+  document.getElementById('ap-actions').innerHTML = selectedTarget !== null
+    ? `<button class="btn btn-yellow" onclick="sendPlay('${card}',false,${selectedTarget})">Confirm ✓</button>
+       <button class="btn btn-ghost btn-sm" onclick="cancelPlay()">Cancel</button>`
+    : `<button class="btn btn-ghost btn-sm" onclick="cancelPlay()">Cancel</button>`;
+
+  panel.classList.add('show');
+}
+
+function showComboPanel(card) {
+  const panel = document.getElementById('action-panel');
+  document.getElementById('ap-label').textContent = `🐱 Pair! Steal from who?`;
+
+  const opponents = gameState.players.map((p,i)=>({p,i})).filter(({p,i})=>i!==myIndex&&p.alive&&p.cardCount>0);
+  document.getElementById('ap-targets').innerHTML = opponents.map(({p,i})=>
+    `<button class="target-btn" onclick="sendPlay('${card}',true,${i})">${p.name} (${p.cardCount})</button>`
+  ).join('');
+
+  document.getElementById('ap-actions').innerHTML = `<button class="btn btn-ghost btn-sm" onclick="cancelPlay()">Cancel</button>`;
+  panel.classList.add('show');
+}
+
+function selectTarget(i, card) {
+  selectedTarget = i;
+  showTargetPanel(card);
+}
+
+function cancelPlay() {
+  selectedCard = null; selectedCardIndex = -1; selectedTarget = null;
+  hideActionPanel(); renderGame();
+}
+
+function hideActionPanel() {
+  document.getElementById('action-panel').classList.remove('show');
+}
+
+// ── DRAW ──
+function drawCard() {
+  if (!isMyTurn()) return;
+  send({ type: 'draw_card' });
+  selectedCard = null; selectedCardIndex = -1; selectedTarget = null;
+  hideActionPanel();
+}
+
+// ── NOPE WINDOW ──
+function openNopeWindow(msg) {
+  const overlay = document.getElementById('nope-overlay');
+  const actionText = document.getElementById('nope-action-text');
+  const nopeBtn = document.getElementById('nope-btn');
+
+  actionText.textContent = `${msg.action.playerName} plays ${CARD_INFO[msg.action.card]?.emoji} ${CARD_INFO[msg.action.card]?.name}!`;
+  document.getElementById('nope-count').textContent = '';
+
+  const myHand = gameState?.players[myIndex]?.hand ?? [];
+  nopeBtn.disabled = !myHand.includes('nope') || myIndex === msg.action.playerIndex;
+
+  nopeEnd = msg.endsAt;
+  overlay.classList.add('show');
+  animateNopeTimer();
+}
+
+function updateNopeBanner(msg) {
+  const isNoped = msg.nopeCount % 2 === 1;
+  document.getElementById('nope-count').textContent = isNoped ? `🚫 NOPED (${msg.nopeCount}x)` : `✅ YEPED — back on! (${msg.nopeCount}x)`;
+  nopeEnd = msg.endsAt;
+  const myHand = gameState?.players[myIndex]?.hand ?? [];
+  document.getElementById('nope-btn').disabled = !myHand.includes('nope');
+}
+
+function animateNopeTimer() {
+  if (nopeAnimFrame) cancelAnimationFrame(nopeAnimFrame);
+  const fill = document.getElementById('nope-timer-fill');
+  function step() {
+    if (!nopeEnd) return;
+    const remaining = Math.max(0, nopeEnd - Date.now());
+    fill.style.width = ((remaining / NOPE_WINDOW_MS) * 100) + '%';
+    if (remaining > 0) nopeAnimFrame = requestAnimationFrame(step);
+    else document.getElementById('nope-overlay').classList.remove('show');
+  }
+  nopeAnimFrame = requestAnimationFrame(step);
+}
+
+function playNope() {
+  send({ type: 'play_nope' });
+  document.getElementById('nope-btn').disabled = true;
+}
+function passNope() {
+  document.getElementById('nope-overlay').classList.remove('show');
+}
+
+// ── SEE THE FUTURE ──
+function showFuture(cards) {
+  document.getElementById('future-cards').innerHTML = cards.map((c,i)=>
+    `<div style="text-align:center">
+      <div style="font-size:.65rem;color:var(--muted);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.1em">${i===0?'Top':'#'+(i+1)}</div>
+      ${cardHTML(c,false,false,'no-click')}
+    </div>`
+  ).join('');
+  document.getElementById('future-overlay').classList.add('show');
+}
+
+// ── EXPLOSION ──
+function triggerExplosion(playerName) {
+  document.body.classList.add('explode');
+  setTimeout(() => document.body.classList.remove('explode'), 700);
+  const me = gameState?.players[myIndex];
+  toast(playerName === me?.name ? '💥 YOU EXPLODED! 😱' : `💥 ${playerName} EXPLODED! 😈`);
+}
+
+// ── INSERT KITTEN ──
+function showInsertOverlay(deckSize) {
+  const slider = document.getElementById('insert-slider');
+  slider.max = deckSize; slider.value = 0;
+  updateInsertPos();
+  document.getElementById('insert-overlay').classList.add('show');
+}
+function updateInsertPos() {
+  const slider = document.getElementById('insert-slider');
+  const pos = parseInt(slider.value), max = parseInt(slider.max);
+  const label = document.getElementById('insert-pos-label');
+  if (pos === 0) label.textContent = 'Top of deck (drawn next!)';
+  else if (pos >= max) label.textContent = 'Bottom of deck (safest)';
+  else label.textContent = `${pos} from the top`;
+}
+function confirmInsert() {
+  const pos = parseInt(document.getElementById('insert-slider').value);
+  send({ type: 'insert_kitten', position: pos });
+  document.getElementById('insert-overlay').classList.remove('show');
+}
+
+// ── GIVE CARD (Favor) ──
+function showGiveCardOverlay(from) {
+  document.getElementById('give-card-sub').textContent = `${from} demands a card — choose one to give:`;
+  const hand = gameState?.players[myIndex]?.hand ?? [];
+  const container = document.getElementById('give-card-hand');
+  container.innerHTML = '';
+  // Show one button per unique card type
+  [...new Set(hand)].forEach(card => {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = cardHTML(card, false, false);
+    wrap.firstChild.addEventListener('click', () => {
+      send({ type: 'give_card', card });
+      document.getElementById('give-card-overlay').classList.remove('show');
+    });
+    container.appendChild(wrap);
+  });
+  document.getElementById('give-card-overlay').classList.add('show');
+}
+
+// ── GAME OVER ──
+function showGameOver(winner) {
+  const isMe = winner === gameState?.players[myIndex]?.name;
+  document.getElementById('go-emoji').textContent = isMe ? '🏆' : '💀';
+  document.getElementById('go-title').textContent = isMe ? 'You Win!' : `${winner} Wins!`;
+  document.getElementById('go-sub').textContent = isMe
+    ? 'You are the last cat standing!'
+    : `${winner} survived the explosions. Better luck next time!`;
+  document.getElementById('gameover-overlay').classList.add('show');
+}
+
+// ── RULES ──
+function showRules() {
+  document.getElementById('rules-body').innerHTML = `
+    <p style="margin-bottom:1rem">Draw cards until someone draws an <strong style="color:var(--red)">Exploding Kitten 💥</strong> — they're eliminated! Last one standing wins.</p>
+    <p style="font-weight:800;color:var(--yellow);margin-bottom:.5rem">Each turn:</p>
+    <p style="margin-bottom:1rem">Play as many cards as you want (optional), then <strong>click the deck to draw</strong> — drawing ends your turn.</p>
+    <p style="font-weight:800;color:var(--yellow);margin-bottom:.5rem">Attack stacking:</p>
+    <p style="margin-bottom:1rem">Attack passes your remaining turns +1 to the next player. If they Attack back, they pass <em>their</em> turns +1 forward. Skip only cancels one turn unit. A Noped Attack/Skip means you still need to draw normally.</p>
+    <p style="font-weight:800;color:var(--yellow);margin-bottom:.5rem">The Cards:</p>
+    ${Object.entries(CARD_INFO).map(([k,c])=>`
+      <div style="display:flex;gap:.75rem;padding:.4rem 0;border-bottom:1px solid #222;align-items:flex-start">
+        <span style="font-size:1.3rem;min-width:2rem;text-align:center">${c.emoji}</span>
+        <div><strong style="font-size:.9rem">${c.name}</strong><br><span style="font-size:.82rem;color:#999">${c.desc}</span></div>
+      </div>`).join('')}
+    <p style="font-weight:800;color:var(--yellow);margin:1rem 0 .5rem">Nope Window:</p>
+    <p style="font-size:.88rem;color:#aaa">After any card is played, a 5-second window opens. Anyone with a Nope can cancel it. A Nope can itself be Noped (Yep!). Each Nope resets the timer to 3 seconds.</p>
+  `;
+  document.getElementById('rules-overlay').classList.add('show');
+}
+
+// ── CARD HTML ──
+function cardHTML(type, selected=false, disabled=false, extraCls='') {
+  const c = CARD_INFO[type];
+  if (!c) return '';
+  const cls = ['card', c.cls, selected?'selected':'', disabled?'card-disabled':'', extraCls].filter(Boolean).join(' ');
+  return `<div class="${cls}">
+    <div class="card-emoji">${c.emoji}</div>
+    <div class="card-name">${c.name}</div>
+    <div class="card-desc">${c.desc}</div>
+  </div>`;
+}
+
+// ── UTILS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3500);
+}
+function confirmLeave() { document.getElementById('leave-overlay').classList.add('show'); }
+function doLeave() { if (ws) ws.close(); location.reload(); }
+
+connect();
+</script>
+</body>
+</html>
