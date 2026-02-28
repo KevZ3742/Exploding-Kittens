@@ -4,6 +4,9 @@ An online implementation of the card game Exploding Kittens, allowing
 players to play the chaotic and strategic card game through a web
 interface.
 
+## Play Online
+Live Game: https://exploding-kittens-qkhg.onrender.com/
+
 ## Overview
 
 This project recreates the mechanics of Exploding Kittens in an online
