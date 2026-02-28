@@ -1,4 +1,4 @@
-# Exploding Kittens (Online Implementation)
+# Exploding Kittens
 
 An online implementation of the card game Exploding Kittens, allowing
 players to play the chaotic and strategic card game through a web
